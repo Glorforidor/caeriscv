@@ -1,4 +1,4 @@
-# CAERiscv
-This is a educational implementation of RISC-V for the course Computer
+# caeriscv
+This is a educational simulation of RISC-V processor for the course Computer
 Architecture and Engineering.
-Check [riscv-go](https://github.com/riscv/riscv-go) for official implementation.
+Check [riscv-go](https://github.com/riscv/riscv-go) for RISC-V go compiler.
