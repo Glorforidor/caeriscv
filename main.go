@@ -10,6 +10,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -94,21 +96,26 @@ func gen() []interface{} {
 	return v
 }
 
+const usage = `Specify a binary file ending with '.bin'.`
+
 func main() {
-	file := "shift.bin"
+	args := os.Args
+	if len(args) < 2 || !strings.HasSuffix(args[1], ".bin") {
+		fmt.Println(usage)
+		os.Exit(1)
+	}
+
 	fmt.Println("Welcome to Go RISC-V simulator")
-	fmt.Printf("Running program: %s\n", file)
+	fmt.Printf("Running program: %s\n", filepath.Base(args[1]))
 
 	reg := make([]uint32, 32)
-	prog, err := readBinary("/home/pbj/cae-lab/finasgmt/tests/task1/" + file)
+	prog, err := readBinary(args[1])
 	if err != nil {
 		panic(err)
 	}
 	for i, inst := range prog {
 		fmt.Printf("%d: %v\n", i, inst)
 	}
-
-	// os.Exit(0)
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
@@ -151,12 +158,11 @@ func main() {
 					os.Exit(1)
 				}
 
+				v := reg[rd]
 				if rest == 0 {
-					v := reg[rd]
 					v = v >> shamt
 					reg[rd] = v
 				} else {
-					v := reg[rd]
 					vv := int32(v)
 					vv = vv >> shamt
 					reg[rd] = uint32(vv)
