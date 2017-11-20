@@ -15,47 +15,6 @@ import (
 	"text/tabwriter"
 )
 
-type Rinst struct {
-	Opcode uint8
-	Rd     uint8
-	Funct3 uint8
-	Rs1    uint8
-	Rs2    uint8
-	Funct7 uint8
-}
-
-type Iinst struct {
-	Opcode uint8
-	Rd     uint8
-	Funct3 uint8
-	Rs1    uint8
-	Imm    int16
-}
-
-type Sinst struct {
-	Opcode uint8
-	Imm1   int8
-	Funct3 uint8
-	Rs1    uint8
-	Rs2    uint8
-	Imm2   int16
-}
-
-type Uinst struct {
-	Opcode uint8
-	Rd     uint8
-	Imm    int32
-}
-
-// testing
-var (
-	prog []uint32 = []uint32{
-		0x00200093, // addi x1, x0, 2
-		0x00300113, // addi x2, x0, 3
-		0x002081b3, // add x3, x1, x2
-	}
-)
-
 // readBinary reads binary file in little endian format and returns the content
 // in slice of instructions. If there is an error, it will be of type ErrUnexpectedEOF.
 func readBinary(name string) (instructions []uint32, err error) {
@@ -101,8 +60,9 @@ func gen() []interface{} {
 const usage = `Specify a binary file ending with '.bin'.`
 
 // execute decode and executes the instruction and store the results into the
-// registers.
-func execute(instr uint32, reg []uint32) {
+// registers. It will return whether a branch instruction is taken with an
+// offset.
+func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 	opcode := instr & 0x7f
 	switch opcode {
 	case 0x13:
@@ -146,21 +106,49 @@ func execute(instr uint32, reg []uint32) {
 				reg[rd] = uint32(vv)
 			}
 		}
-	case 0x33:
+	case 0x33: // Add
 		rd := (instr >> 7) & 0x1f
 		rs1 := (instr >> 15) & 0x1f
 		rs2 := (instr >> 20) & 0x1f
 		reg[rd] = reg[rs1] + reg[rs2]
-	case 0x37:
+	case 0x37: // LUI
 		rd := (instr >> 7) & 0x1f
 		imm := (instr >> 12) << 12
 		reg[rd] = imm
+	case 0x63: // Branching
+		imm1 := (instr >> 7) & 0x1 // imm 11
+		imm2 := (instr >> 8) & 0xf // imm 1 - 4
+		funct3 := (instr >> 12) & 0x7
+		rs1 := (instr >> 15) & 0x1f
+		rs2 := (instr >> 20) & 0x1f
+		imm3 := (instr >> 25) & 0x3f // imm 5 - 10
+		imm4 := (instr >> 31)        // imm 12
+		imm := imm4<<11 + imm1<<10 + imm3<<4 + imm2
+
+		if imm4 == 1 {
+			offset = -2 * int((imm ^ 4095 + 1))
+		} else {
+			offset = 2 * int(imm)
+		}
+
+		switch funct3 {
+		case 0: // BEQ
+			branching = reg[rs1] == reg[rs2]
+		case 1: // BNE
+			branching = reg[rs1] != reg[rs2]
+		case 4: // BLE
+			branching = reg[rs1] < reg[rs2]
+		case 5: // BGE
+			branching = reg[rs1] > reg[rs2]
+		}
 	case 0x73:
 		// Ignore Ecall for now
 	default:
 		fmt.Printf("Opcode %d not yet implemented\n", opcode)
 	}
 
+	// time.Sleep(500 * time.Millisecond)
+	return offset, branching
 }
 
 func main() {
@@ -178,8 +166,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	for i, inst := range prog {
-		fmt.Printf("%d: %v\n", i, inst)
+	for i, instr := range prog {
+		fmt.Printf("%d: %v\n", i, instr)
 	}
 
 	w := new(tabwriter.Writer)
@@ -189,7 +177,11 @@ func main() {
 	pc := uint(0)
 	for {
 		instr := prog[pc]
-		execute(instr, reg)
+		offset, branching := execute(instr, reg)
+		if branching {
+			pc = pc + uint((offset / 4))
+			continue
+		}
 		fmt.Fprintf(w, "%v\t", pc)
 		fmt.Fprintf(w, body, conv(reg)...)
 
