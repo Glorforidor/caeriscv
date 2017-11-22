@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -57,7 +58,7 @@ func gen() []interface{} {
 	return v
 }
 
-const usage = `Specify a binary file ending with '.bin'.`
+const usage = `usage: caeriscv [-debug] <binary file>`
 
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
@@ -152,27 +153,34 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 }
 
 func main() {
-	args := os.Args
-	if len(args) < 2 || !strings.HasSuffix(args[1], ".bin") {
+	debug := flag.Bool("debug", false, "enable debug information")
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) < 1 || !strings.HasSuffix(args[0], ".bin") {
 		fmt.Println(usage)
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	fmt.Println("Welcome to Go RISC-V simulator")
-	fmt.Printf("Running program: %s\n", filepath.Base(args[1]))
-
 	reg := make([]uint32, 32)
-	prog, err := readBinary(args[1])
+	prog, err := readBinary(args[0])
 	if err != nil {
 		panic(err)
 	}
-	for i, instr := range prog {
-		fmt.Printf("%d: %v\n", i, instr)
-	}
 
 	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
-	fmt.Fprintf(w, header, gen()...)
+	if *debug {
+		w.Init(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
+		fmt.Fprintln(w, "Welcome to Go RISC-V simulator")
+		fmt.Fprintf(w, "Running program: %s\n", filepath.Base(args[0]))
+		fmt.Fprintln(w, "Instructions:")
+		for i, instr := range prog {
+			fmt.Fprintf(w, "%d: %v\n", i, instr)
+		}
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, header, gen()...)
+	}
 
 	pc := uint(0)
 	for {
@@ -182,8 +190,11 @@ func main() {
 			pc = pc + uint((offset / 4))
 			continue
 		}
-		fmt.Fprintf(w, "%v\t", pc)
-		fmt.Fprintf(w, body, conv(reg)...)
+
+		if *debug {
+			fmt.Fprintf(w, "%v\t", pc)
+			fmt.Fprintf(w, body, conv(reg)...)
+		}
 
 		pc++
 		if pc >= uint(len(prog)) {
@@ -191,5 +202,4 @@ func main() {
 		}
 	}
 	w.Flush()
-	fmt.Println("Program exit")
 }
