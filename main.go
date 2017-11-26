@@ -58,8 +58,6 @@ func gen() []interface{} {
 	return v
 }
 
-const usage = `usage: caeriscv [-debug] <binary file>`
-
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
@@ -148,18 +146,22 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 		fmt.Printf("Opcode %d not yet implemented\n", opcode)
 	}
 
-	// time.Sleep(500 * time.Millisecond)
 	return offset, branching
+}
+
+func usage() {
+	fmt.Println(`Usage: caeriscv [-debug] <binary file>`)
+	flag.PrintDefaults()
 }
 
 func main() {
 	debug := flag.Bool("debug", false, "enable debug information")
+	flag.Usage = usage
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) < 1 || !strings.HasSuffix(args[0], ".bin") {
-		fmt.Println(usage)
-		flag.PrintDefaults()
+		usage()
 		os.Exit(1)
 	}
 
