@@ -158,7 +158,7 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 			branching = reg[rs1] > reg[rs2]
 		}
 	case 0x73: // Ecall
-		fmt.Printf(body, conv(reg)...)
+		fmt.Println(conv(reg)...)
 	default:
 		fmt.Printf("Opcode %d not yet implemented\n", opcode)
 	}
