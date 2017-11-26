@@ -38,6 +38,21 @@ func readBinary(name string) (instructions []uint32, err error) {
 	return instructions, nil
 }
 
+func writeBinary(name string, reg []uint32) error {
+	f, err := os.Create(name)
+	if err != nil {
+		return fmt.Errorf("could not create file: %v", err)
+	}
+	defer f.Close()
+
+	err = binary.Write(f, binary.LittleEndian, reg)
+	if err != nil {
+		return fmt.Errorf("could not write content in binary: %v", err)
+	}
+
+	return nil
+}
+
 const header = "PC\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\tx%v\t\n"
 const body = "%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t\n"
 
@@ -204,4 +219,8 @@ func main() {
 		}
 	}
 	w.Flush()
+	err = writeBinary("out.res", reg)
+	if err != nil {
+		panic(err)
+	}
 }
