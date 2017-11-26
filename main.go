@@ -38,6 +38,8 @@ func readBinary(name string) (instructions []uint32, err error) {
 	return instructions, nil
 }
 
+// writeBinary writes registers out in binary format to named file.
+// If there is an error, it is either a file creation or binary writing failure.
 func writeBinary(name string, reg []uint32) error {
 	f, err := os.Create(name)
 	if err != nil {
