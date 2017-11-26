@@ -90,7 +90,7 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 			imm := (instr >> 20)
 			if imm>>11 == 1 {
 				// subtract
-				reg[rd] = reg[rs1] - (imm ^ 4095 + 1)
+				reg[rd] = reg[rs1] - (imm ^ 0xfff + 1)
 			} else {
 				reg[rd] = reg[rs1] + imm
 			}
@@ -101,10 +101,8 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 				fmt.Println("The encoding for left shifting is wrong:", rest)
 				os.Exit(1)
 			}
-			v := reg[rd]
-			v = v << shamt
-			reg[rd] = v
-		case 5:
+			reg[rd] = reg[rs1] << shamt
+		case 5: // Right shifting
 			shamt := (instr >> 20) & 0x1f
 			rest := (instr >> 25)
 			if rest != 0 && rest != 32 {
@@ -112,14 +110,10 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 				os.Exit(1)
 			}
 
-			v := reg[rd]
-			if rest == 0 {
-				v = v >> shamt
-				reg[rd] = v
-			} else {
-				vv := int32(v)
-				vv = vv >> shamt
-				reg[rd] = uint32(vv)
+			if rest == 0 { // Logical shifting
+				reg[rd] = reg[rs1] >> shamt
+			} else { // Arithmetic shifting
+				reg[rd] = uint32(int32(reg[rs1]) >> shamt)
 			}
 		}
 	case 0x33: // Add
@@ -142,7 +136,7 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 		imm := imm4<<11 + imm1<<10 + imm3<<4 + imm2
 
 		if imm4 == 1 {
-			offset = -2 * int((imm ^ 4095 + 1))
+			offset = -2 * int((imm ^ 0xfff + 1))
 		} else {
 			offset = 2 * int(imm)
 		}
