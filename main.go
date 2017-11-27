@@ -94,7 +94,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			} else {
 				reg[rd] = reg[rs1] + imm
 			}
-		case 1: // Left shifting
+		case 1: // Shift Left Logical Intermediate
 			shamt := (instr >> 20) & 0x1f
 			rest := (instr >> 25)
 			if rest != 0 {
@@ -102,7 +102,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				os.Exit(1)
 			}
 			reg[rd] = reg[rs1] << shamt
-		case 5: // Right shifting
+		case 5: // Shift Right Intermediate
 			shamt := (instr >> 20) & 0x1f
 			rest := (instr >> 25)
 			if rest != 0 && rest != 32 {
@@ -110,9 +110,9 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				os.Exit(1)
 			}
 
-			if rest == 0 { // Logical shifting
+			if rest == 0 { // Logical
 				reg[rd] = reg[rs1] >> shamt
-			} else { // Arithmetic shifting
+			} else { // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> shamt)
 			}
 		}
@@ -126,12 +126,24 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		rs1 := (instr >> 15) & 0x1f
 		rs2 := (instr >> 20) & 0x1f
 		funct7 := (instr >> 25)
+		if funct7 != 0 && funct7 != 32 {
+			fmt.Println("The encoding for right shifting is wrong:", funct7)
+			os.Exit(1)
+		}
 		switch funct3 {
 		case 0:
 			if funct7 == 0 { // Add
 				reg[rd] = reg[rs1] + reg[rs2]
 			} else if funct7 == 32 { // Sub
 				reg[rd] = reg[rs1] - reg[rs2]
+			}
+		case 1: // Shift Left Logical
+			reg[rd] = reg[rs1] << reg[rs2]
+		case 5: // Shift Right
+			if funct7 == 0 { // Logical
+				reg[rd] = reg[rs1] >> reg[rs2]
+			} else if funct7 == 32 { // Arithmetic
+				reg[rd] = uint32(int32(reg[rs1]) >> reg[rs2])
 			}
 		}
 	case 0x37: // LUI
