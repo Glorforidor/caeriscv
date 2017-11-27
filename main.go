@@ -102,6 +102,9 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				os.Exit(1)
 			}
 			reg[rd] = reg[rs1] << shamt
+		case 4: // XOR Intermediate
+			imm := (instr >> 20)
+			reg[rd] = rs1 ^ imm
 		case 5: // Shift Right Intermediate
 			shamt := (instr >> 20) & 0x1f
 			rest := (instr >> 25)
@@ -115,6 +118,12 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			} else { // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> shamt)
 			}
+		case 6: // OR Intermediate
+			imm := (instr >> 20)
+			reg[rd] = reg[rs1] | imm
+		case 7: // AND Intermediate
+			imm := (instr >> 20)
+			reg[rd] = reg[rs1] & imm
 		}
 	case 0x17: // AUIPC
 		rd := (instr >> 7) & 0x1f
@@ -139,12 +148,18 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			}
 		case 1: // Shift Left Logical
 			reg[rd] = reg[rs1] << reg[rs2]
+		case 3: // XOR
+			reg[rd] = reg[rs1] ^ reg[rs2]
 		case 5: // Shift Right
 			if funct7 == 0 { // Logical
 				reg[rd] = reg[rs1] >> reg[rs2]
 			} else if funct7 == 32 { // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> reg[rs2])
 			}
+		case 6: // OR
+			reg[rd] = reg[rs1] | reg[rs2]
+		case 7:
+			reg[rd] = reg[rs1] & reg[rs2]
 		}
 	case 0x37: // LUI
 		rd := (instr >> 7) & 0x1f
