@@ -145,7 +145,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			}
 		case 1: // Shift Left Logical
 			reg[rd] = reg[rs1] << reg[rs2]
-		case 3: // XOR
+		case 4: // XOR
 			reg[rd] = reg[rs1] ^ reg[rs2]
 		case 5: // Shift Right
 			if funct7 == 0 { // Logical
