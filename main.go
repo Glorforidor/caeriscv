@@ -78,7 +78,7 @@ func gen() []interface{} {
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
-func execute(instr uint32, reg []uint32) (offset int, branching bool) {
+func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool) {
 	opcode := instr & 0x7f
 	switch opcode {
 	case 0x13:
@@ -116,11 +116,24 @@ func execute(instr uint32, reg []uint32) (offset int, branching bool) {
 				reg[rd] = uint32(int32(reg[rs1]) >> shamt)
 			}
 		}
-	case 0x33: // Add
+	case 0x17: // AUIPC
 		rd := (instr >> 7) & 0x1f
+		imm := (instr >> 12) << 12
+		reg[rd] = pc + imm
+	case 0x33:
+		rd := (instr >> 7) & 0x1f
+		funct3 := (instr >> 12) & 0x3
 		rs1 := (instr >> 15) & 0x1f
 		rs2 := (instr >> 20) & 0x1f
-		reg[rd] = reg[rs1] + reg[rs2]
+		funct7 := (instr >> 25)
+		switch funct3 {
+		case 0:
+			if funct7 == 0 { // Add
+				reg[rd] = reg[rs1] + reg[rs2]
+			} else if funct7 == 32 { // Sub
+				reg[rd] = reg[rs1] - reg[rs2]
+			}
+		}
 	case 0x37: // LUI
 		rd := (instr >> 7) & 0x1f
 		imm := (instr >> 12) << 12
@@ -195,12 +208,12 @@ func main() {
 		fmt.Fprintf(w, header, gen()...)
 	}
 
-	pc := uint(0)
+	pc := uint32(0)
 	for {
 		instr := prog[pc]
-		offset, branching := execute(instr, reg)
+		offset, branching := execute(pc, instr, reg)
 		if branching {
-			pc = pc + uint((offset / 4))
+			pc = pc + uint32((offset / 4))
 			continue
 		}
 
@@ -210,7 +223,7 @@ func main() {
 		}
 
 		pc++
-		if pc >= uint(len(prog)) {
+		if pc >= uint32(len(prog)) {
 			break
 		}
 	}
