@@ -103,14 +103,8 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			}
 			reg[rd] = reg[rs1] << shamt
 		case 2: // SLTI
-			trs1 := reg[rs1]
-			timm := imm
-			if trs1>>4 == 1 {
-				trs1 = trs1 ^ 0x1f + 1
-			}
-			if timm>>11 == 1 {
-				timm = timm ^ 0xfff + 1
-			}
+			trs1 := int32(reg[rs1])
+			timm := int32(imm)
 			if trs1 < timm {
 				reg[rd] = 1
 			} else {
@@ -166,14 +160,8 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		case 1: // Shift Left Logical
 			reg[rd] = reg[rs1] << reg[rs2]
 		case 2: // SLT
-			trs1 := reg[rs1]
-			trs2 := reg[rs2]
-			if trs1>>4 == 1 {
-				trs1 = trs1 ^ 0x1f + 1
-			}
-			if trs2>>4 == 1 {
-				trs2 = trs2 ^ 0x1f + 1
-			}
+			trs1 := int32(reg[rs1])
+			trs2 := int32(reg[rs2])
 			if trs1 < trs2 {
 				reg[rd] = 1
 			} else {
