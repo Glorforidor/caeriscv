@@ -102,6 +102,26 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				os.Exit(1)
 			}
 			reg[rd] = reg[rs1] << shamt
+		case 2: // SLTI
+			trs1 := reg[rs1]
+			timm := imm
+			if trs1>>4 == 1 {
+				trs1 = trs1 ^ 0x1f + 1
+			}
+			if timm>>11 == 1 {
+				timm = timm ^ 0xfff + 1
+			}
+			if trs1 < timm {
+				reg[rd] = 1
+			} else {
+				reg[rd] = 0
+			}
+		case 3: // SLTIU
+			if reg[rs1] < imm {
+				reg[rd] = 1
+			} else {
+				reg[rd] = 0
+			}
 		case 4: // XOR Intermediate
 			reg[rd] = rs1 ^ imm
 		case 5: // Shift Right Intermediate
@@ -145,6 +165,26 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			}
 		case 1: // Shift Left Logical
 			reg[rd] = reg[rs1] << reg[rs2]
+		case 2: // SLT
+			trs1 := reg[rs1]
+			trs2 := reg[rs2]
+			if trs1>>4 == 1 {
+				trs1 = trs1 ^ 0x1f + 1
+			}
+			if trs2>>4 == 1 {
+				trs2 = trs2 ^ 0x1f + 1
+			}
+			if trs1 < trs2 {
+				reg[rd] = 1
+			} else {
+				reg[rd] = 0
+			}
+		case 3: // SLTU
+			if reg[rs1] < reg[rs2] {
+				reg[rd] = 1
+			} else {
+				reg[rd] = 0
+			}
 		case 4: // XOR
 			reg[rd] = reg[rs1] ^ reg[rs2]
 		case 5: // Shift Right
