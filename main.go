@@ -75,6 +75,14 @@ func gen() []interface{} {
 	return v
 }
 
+// sext sign extend a imm value.
+func sext(imm uint32) uint32 {
+	if imm>>11 == 1 {
+		imm = imm | 0xfffff000
+	}
+	return imm
+}
+
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
@@ -85,15 +93,10 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
 		rs1 := (instr >> 15) & 0x1f
-		imm := (instr >> 20)
+		imm := sext((instr >> 20))
 		switch funct3 {
 		case 0: // Addi
-			if imm>>11 == 1 {
-				// subtract
-				reg[rd] = reg[rs1] - (imm ^ 0xfff + 1)
-			} else {
-				reg[rd] = reg[rs1] + imm
-			}
+			reg[rd] = reg[rs1] + imm
 		case 1: // Shift Left Logical Intermediate
 			shamt := imm & 0x1f
 			rest := (imm >> 5)
@@ -183,7 +186,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			}
 		case 6: // OR
 			reg[rd] = reg[rs1] | reg[rs2]
-		case 7:
+		case 7: // AND
 			reg[rd] = reg[rs1] & reg[rs2]
 		}
 	case 0x37: // LUI
@@ -211,7 +214,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			branching = reg[rs1] == reg[rs2]
 		case 1: // BNE
 			branching = reg[rs1] != reg[rs2]
-		case 4: // BLE
+		case 4: // BLT
 			branching = reg[rs1] < reg[rs2]
 		case 5: // BGE
 			branching = reg[rs1] > reg[rs2]
