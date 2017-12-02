@@ -149,15 +149,14 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		rs1 := (instr >> 15) & 0x1f
 		rs2 := (instr >> 20) & 0x1f
 		funct7 := (instr >> 25)
-		if funct7 != 0 && funct7 != 32 {
-			fmt.Println("The encoding for right shifting is wrong:", funct7)
-			os.Exit(1)
-		}
 		switch funct3 {
 		case 0:
-			if funct7 == 0 { // Add
+			switch funct7 {
+			case 0: // Add
 				reg[rd] = reg[rs1] + reg[rs2]
-			} else if funct7 == 32 { // Sub
+			case 1: // Mul
+				reg[rd] = reg[rs1] * reg[rs2]
+			case 32: // Sub
 				reg[rd] = reg[rs1] - reg[rs2]
 			}
 		case 1: // Shift Left Logical
