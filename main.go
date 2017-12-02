@@ -215,9 +215,13 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		case 1: // BNE
 			branching = reg[rs1] != reg[rs2]
 		case 4: // BLT
-			branching = reg[rs1] < reg[rs2]
+			branching = int32(reg[rs1]) < int32(reg[rs2])
 		case 5: // BGE
-			branching = reg[rs1] > reg[rs2]
+			branching = int32(reg[rs1]) >= int32(reg[rs2])
+		case 6: // BLTU
+			branching = reg[rs1] < reg[rs2]
+		case 7: // BGEU
+			branching = reg[rs1] >= reg[rs2]
 		}
 	case 0x73: // Ecall
 		fmt.Println(conv(reg)...)
