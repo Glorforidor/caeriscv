@@ -169,12 +169,19 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				reg[rd] = uint32(res)
 			}
 		case 2: // SLT
-			trs1 := int32(reg[rs1])
-			trs2 := int32(reg[rs2])
-			if trs1 < trs2 {
-				reg[rd] = 1
-			} else {
-				reg[rd] = 0
+			switch funct7 {
+			case 0:
+				trs1 := int32(reg[rs1])
+				trs2 := int32(reg[rs2])
+				if trs1 < trs2 {
+					reg[rd] = 1
+				} else {
+					reg[rd] = 0
+				}
+			case 1: // Mulhsu
+				res := int64(int32(reg[rs1])) * int64(reg[rs2])
+				res = res >> 32
+				reg[rd] = uint32(res)
 			}
 		case 3: // SLTU
 			switch funct7 {
