@@ -112,6 +112,13 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 			reg[rd] = res
 		case 4: // LBU
 			reg[rd] = uint32(mem[sp+imm])
+		case 5: // LHU
+			res := uint32(0)
+			for i := 0; i < 2; i++ {
+				fmt.Println(mem[sp+imm+uint32(i)])
+				res = res + uint32(uint16(mem[sp+imm+uint32(i)])<<uint(8*i))
+			}
+			reg[rd] = res
 		}
 	case 0x13:
 		rd := (instr >> 7) & 0x1f
