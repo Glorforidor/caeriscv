@@ -159,18 +159,18 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			case 32: // Sub
 				reg[rd] = reg[rs1] - reg[rs2]
 			}
-		case 1: // Shift Left Logical
+		case 1:
 			switch funct7 {
-			case 0:
+			case 0: // Shift Left Logical
 				reg[rd] = reg[rs1] << reg[rs2]
 			case 1: // Mulh
 				res := int64(int32(reg[rs1])) * int64(int32(reg[rs2]))
 				res = res >> 32
 				reg[rd] = uint32(res)
 			}
-		case 2: // SLT
+		case 2:
 			switch funct7 {
-			case 0:
+			case 0: // SLT
 				trs1 := int32(reg[rs1])
 				trs2 := int32(reg[rs2])
 				if trs1 < trs2 {
@@ -183,9 +183,9 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				res = res >> 32
 				reg[rd] = uint32(res)
 			}
-		case 3: // SLTU
+		case 3:
 			switch funct7 {
-			case 0:
+			case 0: // SLTU
 				if reg[rs1] < reg[rs2] {
 					reg[rd] = 1
 				} else {
@@ -196,10 +196,20 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				res = res >> 32
 				reg[rd] = uint32(res)
 			}
-		case 4: // XOR
-			reg[rd] = reg[rs1] ^ reg[rs2]
+		case 4:
+			switch funct7 {
+			case 0: // XOR
+				reg[rd] = reg[rs1] ^ reg[rs2]
+			case 1: // Div
+				if int32(reg[rs2]) == 0 {
+					reg[rd] = ^uint32(0)
+				} else {
+					reg[rd] = uint32(int32(reg[rs1]) / int32(reg[rs2]))
+				}
+			}
 		case 5: // Shift Right
-			if funct7 == 0 { // Logical
+			switch funct7 {
+			case 0: // Logical
 				reg[rd] = reg[rs1] >> reg[rs2]
 			} else if funct7 == 32 { // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> reg[rs2])
