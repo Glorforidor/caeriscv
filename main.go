@@ -93,31 +93,26 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
 		//rs1 := (instr >> 15) & 0x1f
-		imm := (instr >> 20)
+		imm := sext((instr >> 20))
 		sp := reg[2]
 		switch funct3 {
 		case 0: // LB
-			imm = sext(imm)
 			reg[rd] = uint32(int8(mem[sp+imm]))
 		case 1: // LH
-			imm = sext(imm)
 			res := uint32(0)
 			for i := 0; i < 2; i++ {
 				res = res + uint32(int16(mem[sp+imm+uint32(i)])<<uint(8*i))
 			}
 			reg[rd] = res
 		case 2: // LW
-			imm = sext(imm)
 			res := uint32(0)
 			for i := 0; i < 4; i++ {
 				res = res + uint32(int32(mem[sp+imm+uint32(i)])<<uint(8*i))
 			}
 			reg[rd] = res
 		case 4: // LBU
-			imm = sext(imm)
 			reg[rd] = uint32(mem[sp+imm])
 		}
-
 	case 0x13:
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
