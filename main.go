@@ -86,9 +86,20 @@ func sext(imm uint32) uint32 {
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
-func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool) {
+func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, branching bool) {
 	opcode := instr & 0x7f
 	switch opcode {
+	case 0x3:
+		rd := (instr >> 7) & 0x1f
+		funct3 := (instr >> 12) & 0x7
+		//rs1 := (instr >> 15) & 0x1f
+		imm := (instr >> 20)
+		switch funct3 {
+		case 0:
+			imm = sext(imm)
+			reg[rd] = uint32(int8(mem[reg[2]+imm]))
+		}
+
 	case 0x13:
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
@@ -143,6 +154,17 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		rd := (instr >> 7) & 0x1f
 		imm := (instr >> 12) << 12
 		reg[rd] = pc + imm
+	case 0x23:
+		imm1 := (instr >> 7) & 0x1f
+		funct3 := (instr >> 12) & 0x7
+		//rs1 := (instr >> 15) & 0x1f
+		rs2 := (instr >> 20) & 0x1f // src
+		imm2 := (instr >> 25)
+		imm := imm2<<4 + imm1
+		switch funct3 {
+		case 0:
+			mem[reg[2]+imm] = uint8(reg[rs2] & 0xff)
+		}
 	case 0x33:
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
@@ -304,6 +326,8 @@ func main() {
 	}
 
 	reg := make([]uint32, 32)
+	mem := make([]uint8, 128)
+	reg[2] = uint32(len(mem))
 	prog, err := readBinary(args[0])
 	if err != nil {
 		panic(err)
@@ -325,7 +349,7 @@ func main() {
 	pc := uint32(0)
 	for {
 		instr := prog[pc]
-		offset, branching := execute(pc, instr, reg)
+		offset, branching := execute(pc, instr, reg, mem)
 		if branching {
 			pc = pc + uint32((offset / 4))
 			continue
