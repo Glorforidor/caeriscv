@@ -160,7 +160,14 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				reg[rd] = reg[rs1] - reg[rs2]
 			}
 		case 1: // Shift Left Logical
-			reg[rd] = reg[rs1] << reg[rs2]
+			switch funct7 {
+			case 0:
+				reg[rd] = reg[rs1] << reg[rs2]
+			case 1: // Mulh
+				res := int64(int32(reg[rs1])) * int64(int32(reg[rs2]))
+				res = res >> 32
+				reg[rd] = uint32(res)
+			}
 		case 2: // SLT
 			trs1 := int32(reg[rs1])
 			trs2 := int32(reg[rs2])
