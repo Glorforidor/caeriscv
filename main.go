@@ -177,10 +177,17 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 				reg[rd] = 0
 			}
 		case 3: // SLTU
-			if reg[rs1] < reg[rs2] {
-				reg[rd] = 1
-			} else {
-				reg[rd] = 0
+			switch funct7 {
+			case 0:
+				if reg[rs1] < reg[rs2] {
+					reg[rd] = 1
+				} else {
+					reg[rd] = 0
+				}
+			case 1: // Mulhu
+				res := uint64(reg[rs1]) * uint64(reg[rs2])
+				res = res >> 32
+				reg[rd] = uint32(res)
 			}
 		case 4: // XOR
 			reg[rd] = reg[rs1] ^ reg[rs2]
