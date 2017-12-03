@@ -211,7 +211,14 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			switch funct7 {
 			case 0: // Logical
 				reg[rd] = reg[rs1] >> reg[rs2]
-			} else if funct7 == 32 { // Arithmetic
+			case 1: // Divu
+				// TODO: ask TA about unsigned division by zero.
+				if reg[rs2] == 0 {
+					reg[rd] = reg[rs1]
+				} else {
+					reg[rd] = reg[rs1] / reg[rs2]
+				}
+			case 32: // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> reg[rs2])
 			}
 		case 6: // OR
