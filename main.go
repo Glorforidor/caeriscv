@@ -221,10 +221,23 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			case 32: // Arithmetic
 				reg[rd] = uint32(int32(reg[rs1]) >> reg[rs2])
 			}
-		case 6: // OR
-			reg[rd] = reg[rs1] | reg[rs2]
-		case 7: // AND
-			reg[rd] = reg[rs1] & reg[rs2]
+		case 6:
+			switch funct7 {
+			case 0: // OR
+				reg[rd] = reg[rs1] | reg[rs2]
+			case 1: // Rem
+				if reg[rs2] == 0 {
+					reg[rd] = uint32(int32(reg[rs1]))
+				} else {
+					reg[rd] = uint32(int32(reg[rs1]) % int32(reg[rs2]))
+				}
+			}
+		case 7:
+			switch funct7 {
+			case 0: // AND
+				reg[rd] = reg[rs1] & reg[rs2]
+			case 1: // Remu
+			}
 		}
 	case 0x37: // LUI
 		rd := (instr >> 7) & 0x1f
