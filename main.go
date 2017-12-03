@@ -237,6 +237,11 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 			case 0: // AND
 				reg[rd] = reg[rs1] & reg[rs2]
 			case 1: // Remu
+				if reg[rs2] == 0 {
+					reg[rd] = reg[rs1]
+				} else {
+					reg[rd] = reg[rs1] % reg[rs2]
+				}
 			}
 		}
 	case 0x37: // LUI
