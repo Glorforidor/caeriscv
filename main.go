@@ -106,13 +106,16 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 				res = res + uint32(int16(mem[sp+imm+uint32(i)])<<uint(8*i))
 			}
 			reg[rd] = res
-		case 2:
+		case 2: // LW
 			imm = sext(imm)
 			res := uint32(0)
 			for i := 0; i < 4; i++ {
 				res = res + uint32(int32(mem[sp+imm+uint32(i)])<<uint(8*i))
 			}
 			reg[rd] = res
+		case 4: // LBU
+			imm = sext(imm)
+			reg[rd] = uint32(mem[sp+imm])
 		}
 
 	case 0x13:
@@ -184,7 +187,7 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 			for i := 0; i < 2; i++ {
 				mem[sp+imm+uint32(i)] = uint8((uint16(reg[rs2]) >> uint(8*i)) & 0xff)
 			}
-		case 2:
+		case 2: // SW
 			for i := 0; i < 4; i++ {
 				mem[sp+imm+uint32(i)] = uint8((uint32(reg[rs2]) >> uint(8*i)) & 0xff)
 			}
