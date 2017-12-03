@@ -145,7 +145,7 @@ func execute(pc uint32, instr uint32, reg []uint32) (offset int, branching bool)
 		reg[rd] = pc + imm
 	case 0x33:
 		rd := (instr >> 7) & 0x1f
-		funct3 := (instr >> 12) & 0x3
+		funct3 := (instr >> 12) & 0x7
 		rs1 := (instr >> 15) & 0x1f
 		rs2 := (instr >> 20) & 0x1f
 		funct7 := (instr >> 25)
