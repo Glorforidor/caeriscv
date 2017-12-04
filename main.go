@@ -77,7 +77,9 @@ func gen() []interface{} {
 
 // sext sign extend a imm value.
 func sext(imm uint32) uint32 {
-	if imm>>11 == 1 {
+	if imm>>20 == 1 {
+		imm = imm | 0xfff00000
+	} else if imm>>11 == 1 {
 		imm = imm | 0xfffff000
 	}
 	return imm
