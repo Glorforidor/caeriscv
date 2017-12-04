@@ -151,7 +151,7 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 				reg[rd] = 0
 			}
 		case 4: // XOR Intermediate
-			reg[rd] = rs1 ^ imm
+			reg[rd] = reg[rs1] ^ imm
 		case 5: // Shift Right Intermediate
 			shamt := imm & 0x1f
 			rest := (imm >> 5)
@@ -310,7 +310,7 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 		imm := imm4<<11 + imm1<<10 + imm3<<4 + imm2
 
 		if imm4 == 1 {
-			offset = -2 * int((imm ^ 0xfff + 1))
+			offset = -2 * int(imm^0xfff+1)
 		} else {
 			offset = 2 * int(imm)
 		}
