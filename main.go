@@ -88,15 +88,15 @@ func sext(imm uint32) uint32 {
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
-func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, branching bool) {
+func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, branching, exit bool) {
 	opcode := instr & 0x7f
 	switch opcode {
 	case 0x3:
 		rd := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
-		//rs1 := (instr >> 15) & 0x1f
+		rs1 := (instr >> 15) & 0x1f
 		imm := sext((instr >> 20))
-		sp := reg[2]
+		sp := reg[rs1]
 		switch funct3 {
 		case 0: // LB
 			reg[rd] = uint32(int8(mem[sp+imm]))
@@ -173,11 +173,11 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 	case 0x23:
 		imm1 := (instr >> 7) & 0x1f
 		funct3 := (instr >> 12) & 0x7
-		//rs1 := (instr >> 15) & 0x1f
+		rs1 := (instr >> 15) & 0x1f // base
 		rs2 := (instr >> 20) & 0x1f // src
 		imm2 := (instr >> 25)
-		imm := imm2<<4 + imm1
-		sp := reg[2]
+		imm := sext(imm2<<5 + imm1)
+		sp := reg[rs1]
 		switch funct3 {
 		case 0: // SB
 			mem[sp+imm] = uint8(reg[rs2] & 0xff)
@@ -325,13 +325,36 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 		case 7: // BGEU
 			branching = reg[rs1] >= reg[rs2]
 		}
+	case 0x67: // JALR
+		rd := (instr >> 7) & 0x1f
+		funct3 := (instr >> 12) & 0x7
+		rs1 := (instr >> 15) & 0x1f
+		imm := sext((instr >> 20))
+		if funct3 == 0 {
+			branching = true
+			reg[rd] = pc + 1
+			offset = int(reg[rs1]+imm) & 0xfffffffe
+		}
+	case 0x6f: // JAL
+		rd := (instr >> 7) & 0x1f
+		imm1 := (instr >> 12) & 0xff  // imm 12 - 19
+		imm2 := (instr >> 20) & 0x1   // imm 11
+		imm3 := (instr >> 21) & 0x3ff // imm 1 - 10
+		imm4 := (instr >> 31)         // imm 20
+		imm := sext((imm4<<20 + imm1<<12 + imm2<<11 + imm3<<1))
+		branching = true
+		reg[rd] = pc + 1
+		offset = int(reg[rd] + imm)
 	case 0x73: // Ecall
 		fmt.Println(conv(reg)...)
+		exit = true
 	default:
 		fmt.Printf("Opcode %d not yet implemented\n", opcode)
 	}
 
-	return offset, branching
+	reg[0] = 0
+
+	return offset, branching, exit
 }
 
 func usage() {
@@ -351,7 +374,7 @@ func main() {
 	}
 
 	reg := make([]uint32, 32)
-	mem := make([]uint8, 128)
+	mem := make([]uint8, 4096)
 	reg[2] = uint32(len(mem))
 	prog, err := readBinary(args[0])
 	if err != nil {
@@ -374,15 +397,17 @@ func main() {
 	pc := uint32(0)
 	for {
 		instr := prog[pc]
-		offset, branching := execute(pc, instr, reg, mem)
-		if branching {
-			pc = pc + uint32((offset / 4))
-			continue
-		}
-
+		offset, branching, exit := execute(pc, instr, reg, mem)
 		if *debug {
 			fmt.Fprintf(w, "%v\t", pc)
 			fmt.Fprintf(w, body, conv(reg)...)
+		}
+		if exit {
+			break
+		}
+		if branching {
+			pc = pc + uint32((offset / 4))
+			continue
 		}
 
 		pc++
