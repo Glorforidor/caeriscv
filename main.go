@@ -88,7 +88,7 @@ func sext(imm uint32) uint32 {
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
-func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, branching, exit bool) {
+func execute(pc uint32, instr uint32, reg []uint32, mem []byte) (offset int, branching, exit bool) {
 	opcode := instr & 0x7f
 	switch opcode {
 	case 0x3:
@@ -179,14 +179,14 @@ func execute(pc uint32, instr uint32, reg []uint32, mem []uint8) (offset int, br
 		sp := reg[rs1]
 		switch funct3 {
 		case 0: // SB
-			mem[sp+imm] = uint8(reg[rs2] & 0xff)
+			mem[sp+imm] = byte(reg[rs2] & 0xff)
 		case 1: // SH
 			for i := 0; i < 2; i++ {
-				mem[sp+imm+uint32(i)] = uint8((uint16(reg[rs2]) >> uint(8*i)) & 0xff)
+				mem[sp+imm+uint32(i)] = byte((uint16(reg[rs2]) >> uint(8*i)) & 0xff)
 			}
 		case 2: // SW
 			for i := 0; i < 4; i++ {
-				mem[sp+imm+uint32(i)] = uint8((uint32(reg[rs2]) >> uint(8*i)) & 0xff)
+				mem[sp+imm+uint32(i)] = byte((uint32(reg[rs2]) >> uint(8*i)) & 0xff)
 			}
 		}
 	case 0x33:
@@ -373,7 +373,7 @@ func main() {
 	}
 
 	reg := make([]uint32, 32)
-	mem := make([]uint8, 4096)
+	mem := make([]byte, 4096)
 	reg[2] = uint32(len(mem))
 	prog, err := readBinary(args[0])
 	if err != nil {
