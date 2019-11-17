@@ -88,7 +88,7 @@ func sext(imm uint32) uint32 {
 // execute decode and executes the instruction and store the results into the
 // registers. It will return whether a branch instruction is taken with an
 // offset.
-func execute(pc uint32, instr uint32, reg []uint32, mem []byte) (offset int, branching, exit bool) {
+func execute(pc, instr uint32, reg []uint32, mem []byte) (offset int, branching, exit bool) {
 	opcode := instr & 0x7f
 	switch opcode {
 	case 0x3:
