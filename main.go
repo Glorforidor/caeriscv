@@ -9,7 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +19,7 @@ import (
 // readBinary reads binary file in little endian format and returns the content
 // in slice of instructions. If there is an error, it will be of type ErrUnexpectedEOF.
 func readBinary(name string) (instructions []uint32, err error) {
-	b, err := ioutil.ReadFile(name)
+	b, err := os.ReadFile(name)
 	if err != nil {
 		return nil, fmt.Errorf("could not open file: %v", err)
 	}
@@ -45,7 +45,7 @@ func writeBinary(name string, reg []uint32) error {
 	if err != nil {
 		return fmt.Errorf("could not create file: %v", err)
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	err = binary.Write(f, binary.LittleEndian, reg)
 	if err != nil {
@@ -383,14 +383,14 @@ func main() {
 	w := new(tabwriter.Writer)
 	if *debug {
 		w.Init(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
-		fmt.Fprintln(w, "Welcome to Go RISC-V simulator")
-		fmt.Fprintf(w, "Running program: %s\n", filepath.Base(args[0]))
-		fmt.Fprintln(w, "Instructions:")
+		fmt.Fprintln(w, "Welcome to Go RISC-V simulator")               //nolint:errcheck
+		fmt.Fprintf(w, "Running program: %s\n", filepath.Base(args[0])) //nolint:errcheck
+		fmt.Fprintln(w, "Instructions:")                                //nolint:errcheck
 		for i, instr := range prog {
-			fmt.Fprintf(w, "%d: %v\n", i, instr)
+			fmt.Fprintf(w, "%d: %v\n", i, instr) //nolint:errcheck
 		}
-		fmt.Fprintln(w)
-		fmt.Fprintf(w, header, gen()...)
+		fmt.Fprintln(w)                  //nolint:errcheck
+		fmt.Fprintf(w, header, gen()...) //nolint:errcheck
 	}
 
 	pc := uint32(0)
@@ -398,8 +398,8 @@ func main() {
 		instr := prog[pc]
 		offset, branching, exit := execute(pc, instr, reg, mem)
 		if *debug {
-			fmt.Fprintf(w, "%v\t", pc)
-			fmt.Fprintf(w, body, conv(reg)...)
+			fmt.Fprintf(w, "%v\t", pc)         //nolint:errcheck
+			fmt.Fprintf(w, body, conv(reg)...) //nolint:errcheck
 		}
 		if exit {
 			break
@@ -414,9 +414,10 @@ func main() {
 			break
 		}
 	}
-	w.Flush()
-	err = writeBinary("out.res", reg)
-	if err != nil {
-		panic(err)
+	if err := w.Flush(); err != nil {
+		log.Fatalf("could not flush: %v", err)
+	}
+	if err := writeBinary("out.res", reg); err != nil {
+		log.Fatalf("could not write binary: %v", err)
 	}
 }
